@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Patient",
+      "description": "A patient registered at the dental clinic.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the patient" },
+        "phone": { "type": "string", "description": "Contact number" },
+        "age": { "type": "number", "description": "Age of the patient" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "address": { "type": "string", "description": "Residential address" },
+        "totalAmount": { "type": "number", "description": "Total billed amount" },
+        "paidAmount": { "type": "number", "description": "Total paid amount" },
+        "pendingAmount": { "type": "number", "description": "Total pending amount" },
+        "createdAt": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" }
+      },
+      "required": ["name", "phone", "age", "gender", "address", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "A scheduled visit for a patient.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "date": { "type": "string", "format": "date", "description": "YYYY-MM-DD" },
+        "time": { "type": "string", "format": "time", "description": "HH:MM" },
+        "status": { "type": "string", "enum": ["Scheduled", "Completed", "Cancelled"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["patientId", "patientName", "date", "time", "status", "createdAt"]
+    },
+    "Prescription": {
+      "title": "Prescription",
+      "description": "A medical prescription given to a patient.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "date": { "type": "timestamp" },
+        "diagnosis": { "type": "string" },
+        "medicines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "dosage": { "type": "string" },
+              "duration": { "type": "string" },
+              "instructions": { "type": "string" }
+            }
+          }
+        },
+        "instructions": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["patientId", "patientName", "date", "diagnosis", "medicines", "createdAt"]
+    },
+    "Invoice": {
+      "title": "Invoice",
+      "description": "A billing invoice for treatments.",
+      "type": "object",
+      "properties": {
+        "invoiceNumber": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "date": { "type": "timestamp" },
+        "treatments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "cost": { "type": "number" }
+            }
+          }
+        },
+        "totalAmount": { "type": "number" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["invoiceNumber", "patientId", "patientName", "date", "treatments", "totalAmount", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/patients/{patientId}": {
+      "schema": { "$ref": "#/entities/Patient" },
+      "description": "Stores patient records."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": { "$ref": "#/entities/Appointment" },
+      "description": "Stores appointment records."
+    },
+    "/prescriptions/{prescriptionId}": {
+      "schema": { "$ref": "#/entities/Prescription" },
+      "description": "Stores prescription records."
+    },
+    "/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Stores invoice records."
+    }
+  }
+}

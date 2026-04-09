@@ -1,0 +1,149 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'prashantvats584@gmail.com' ||
+        (exists(/databases/$(database)/documents/doctors/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/doctors/$(request.auth.uid)).data.role == 'Admin')
+      );
+    }
+
+    function isAuthorized() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'prashantvats584@gmail.com' ||
+        exists(/databases/$(database)/documents/doctors/$(request.auth.uid))
+      );
+    }
+
+    function isOwner(data) {
+      return isAuthorized() && (isAdmin() || data.doctorId == request.auth.uid);
+    }
+
+    function isPatientOwner(patientId) {
+      return isAuthorized() && (isAdmin() || get(/databases/$(database)/documents/patients/$(patientId)).data.doctorId == request.auth.uid);
+    }
+    
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+    
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+    
+    // Validators
+    function isValidPatient() {
+      let data = request.resource.data;
+      return data.name is string && 
+             data.phone is string && 
+             data.age is number && 
+             data.gender in ['Male', 'Female', 'Other'] &&
+             data.address is string && 
+             data.totalAmount is number && 
+             data.paidAmount is number && 
+             data.pendingAmount is number;
+    }
+    
+    function isValidAppointment() {
+      let data = request.resource.data;
+      return (!('patientId' in data) || data.patientId is string) &&
+             data.patientName is string &&
+             data.phone is string &&
+             (!('chiefComplaint' in data) || data.chiefComplaint is string) &&
+             data.date is string &&
+             data.time is string &&
+             data.status in ['Scheduled', 'Completed', 'Cancelled'] &&
+             (!('notes' in data) || data.notes is string);
+    }
+    
+    function isValidPrescription() {
+      let data = request.resource.data;
+      return data.patientId is string &&
+             data.patientName is string &&
+             data.date is timestamp &&
+             data.medicines is list;
+    }
+    
+    function isValidInvoice() {
+      let data = request.resource.data;
+      return data.invoiceNumber is string &&
+             data.patientId is string &&
+             data.patientName is string &&
+             data.date is timestamp &&
+             data.treatments is list &&
+             data.totalAmount is number;
+    }
+
+    match /doctors/{doctorId} {
+      allow read: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == doctorId && request.auth.token.email == 'prashantvats584@gmail.com') ||
+        isAdmin()
+      );
+      allow update: if isAdmin();
+      allow delete: if isAdmin() && request.auth.uid != doctorId; // Prevent self-deletion of admin
+    }
+
+    match /patients/{patientId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow create: if isAuthorized() && hasRequiredFields(['name', 'phone', 'age', 'gender', 'address', 'createdAt', 'doctorId']) && isValidPatient() && request.resource.data.doctorId == request.auth.uid;
+      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidPatient() && request.resource.data.doctorId == resource.data.doctorId;
+      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /appointments/{appointmentId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow create: if isAuthorized() && hasRequiredFields(['patientName', 'phone', 'date', 'time', 'status', 'createdAt', 'doctorId']) && isValidAppointment() && request.resource.data.doctorId == request.auth.uid;
+      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidAppointment() && request.resource.data.doctorId == resource.data.doctorId;
+      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /prescriptions/{prescriptionId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow create: if isAuthorized() && hasRequiredFields(['patientId', 'patientName', 'date', 'medicines', 'createdAt', 'doctorId']) && isValidPrescription() && request.resource.data.doctorId == request.auth.uid;
+      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidPrescription() && request.resource.data.doctorId == resource.data.doctorId;
+      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /invoices/{invoiceId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow create: if isAuthorized() && hasRequiredFields(['invoiceNumber', 'patientId', 'patientName', 'date', 'treatments', 'totalAmount', 'createdAt', 'doctorId']) && isValidInvoice() && request.resource.data.doctorId == request.auth.uid;
+      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidInvoice() && request.resource.data.doctorId == resource.data.doctorId;
+      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /settings/{settingId} {
+      allow read, write: if isAuthorized();
+    }
+    
+    match /dentalCharts/{patientId} {
+      allow read, write: if isPatientOwner(patientId);
+    }
+    match /expenses/{expenseId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /labBills/{labBillId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /consultations/{consultationId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /media/{mediaId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+    }
+  }
+}
