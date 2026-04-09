@@ -5,13 +5,9 @@
   "homepage": "https://prashantvats584-dev.github.io/Oracle-Dental-clinic-management-software/",
   "type": "module",
   "scripts": {
-    "dev": "vite --port=3000 --host=0.0.0.0",
-    "build": "vite build && cp dist/index.html dist/404.html",
-    "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist",
-    "clean": "rm -rf dist",
-    "lint": "tsc --noEmit"
+    "dev": "npx serve .",
+    "build": "echo 'No build step needed for Vanilla JS version'",
+    "deploy": "gh-pages -d ."
   },
   "dependencies": {
     "@google/genai": "^1.29.0",

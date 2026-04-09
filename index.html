@@ -1,23 +1,146 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#2563eb" />
-    <meta name="description" content="Oracle Dental Clinic Management System" />
-    <title>Oracle Dental Clinic</title>
-  </head>
-  <body>
-    <div id="root">
-      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #FDFCFB; font-family: sans-serif;">
-        <div style="width: 48px; height: 48px; border: 4px solid #2563eb; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <p style="margin-top: 16px; color: #6b7280; font-weight: 500;">Loading Oracle Dental Clinic...</p>
-        <style>
-          @keyframes spin { to { transform: rotate(360deg); } }
-        </style>
-      </div>
-    </div>
-    <script type="module" src="./src/main.tsx"></script>
-  </body>
-</html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Oracle Dental Clinic | Management System</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                        display: ['"Instrument Serif"', 'serif'],
+                    },
+                    colors: {
+                        clinic: {
+                            primary: '#2563eb',
+                            secondary: '#FDFCFB',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 
+    <style>
+        [xl-cloak] { display: none !important; }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d1d5db; }
+
+        body {
+            background-color: #FDFCFB;
+            color: #111827;
+        }
+
+        .tooth-btn {
+            aspect-ratio: 1/1;
+            border: 2px solid #f3f4f6;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .tooth-btn:hover {
+            border-color: #2563eb;
+            background-color: #eff6ff;
+        }
+
+        .tooth-icon {
+            width: 16px;
+            height: 24px;
+            background-color: #f3f4f6;
+            border-radius: 100% 100% 4px 4px;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#FDFCFB]">
+        <div class="w-12 h-12 border-4 border-clinic-primary border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-gray-500 font-medium tracking-wide">Initializing Oracle Dental Clinic...</p>
+    </div>
+
+    <!-- App Root -->
+    <div id="app-root" class="hidden h-screen flex overflow-hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="hidden lg:flex lg:flex-shrink-0 w-64 flex-col bg-white border-r border-gray-100">
+            <div class="flex items-center h-16 px-6 border-b border-gray-50">
+                <h1 class="text-2xl font-display text-clinic-primary truncate">Oracle Dental</h1>
+            </div>
+            <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto" id="nav-links">
+                <!-- Nav items injected by JS -->
+            </nav>
+            <div class="p-4 border-t border-gray-50">
+                <div class="flex items-center px-2 py-3">
+                    <div class="w-10 h-10 rounded-xl bg-clinic-primary text-white flex items-center justify-center font-bold shadow-lg shadow-blue-100">
+                        A
+                    </div>
+                    <div class="ml-3 overflow-hidden">
+                        <p class="text-sm font-semibold text-gray-900 truncate">Clinic Admin</p>
+                        <p class="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Public Access</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            <!-- Mobile Header -->
+            <header class="lg:hidden flex items-center justify-between h-16 px-4 bg-white border-b border-gray-100">
+                <button id="mobile-menu-btn" class="p-2 text-gray-500 hover:bg-gray-50 rounded-lg">
+                    <i data-lucide="menu"></i>
+                </button>
+                <h1 class="text-xl font-display text-clinic-primary">Oracle Dental</h1>
+                <div class="w-10"></div>
+            </header>
+
+            <!-- Page Content -->
+            <main class="flex-1 overflow-y-auto p-4 lg:p-8" id="page-content">
+                <!-- Content injected by JS -->
+            </main>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm hidden lg:hidden"></div>
+    <div id="mobile-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white transform -translate-x-full transition-transform duration-300 lg:hidden">
+        <div class="flex items-center justify-between h-16 px-6 border-b border-gray-50">
+            <h1 class="text-2xl font-display text-clinic-primary">Oracle Dental</h1>
+            <button id="close-mobile-menu" class="p-2 text-gray-400">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <nav class="px-4 py-6 space-y-1" id="mobile-nav-links">
+            <!-- Nav items injected by JS -->
+        </nav>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js" defer></script>
+</body>
+</html>
