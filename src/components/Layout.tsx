@@ -42,7 +42,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         }`}
       >
         <div className="flex items-center justify-between h-16 border-b border-gray-200 px-4">
-          <h1 className="text-xl font-bold text-blue-600 truncate font-display">Oracle Dental</h1>
+          <h1 className="text-2xl font-display text-blue-600 truncate">Oracle Dental</h1>
           <button onClick={() => setIsMobileMenuOpen(false)} className="lg:hidden p-2 text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
@@ -83,22 +83,15 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           )}
         </nav>
         <div className="absolute bottom-0 w-full p-4 border-t border-gray-200 bg-white">
-          <div className="flex items-center mb-4 px-2">
+          <div className="flex items-center px-2">
             <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-lg shadow-blue-100">
-              {doctor?.name?.charAt(0) || user?.displayName?.charAt(0) || 'D'}
+              {doctor?.name?.charAt(0) || 'D'}
             </div>
             <div className="ml-3 overflow-hidden">
-              <p className="text-sm font-bold text-gray-900 truncate">Dr. {doctor?.name || user?.displayName}</p>
-              <p className="text-xs text-gray-500 truncate font-medium">{doctor?.role || 'Doctor'}</p>
+              <p className="text-sm font-semibold text-gray-900 truncate">{doctor?.name || 'Clinic Admin'}</p>
+              <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">Public Access</p>
             </div>
           </div>
-          <button
-            onClick={logout}
-            className="flex items-center w-full px-4 py-2.5 text-sm font-bold text-red-600 rounded-lg hover:bg-red-50 transition-all active:scale-[0.98]"
-          >
-            <LogOut className="w-5 h-5 mr-3" />
-            Logout
-          </button>
         </div>
       </aside>
 
@@ -111,12 +104,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <h1 className="text-lg font-bold text-blue-600 font-display">Oracle Dental</h1>
-          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-            <span className="text-blue-600 font-bold text-xs">
-              {doctor?.name?.charAt(0) || user?.displayName?.charAt(0) || 'D'}
-            </span>
-          </div>
+          <h1 className="text-xl font-display text-blue-600">Oracle Dental</h1>
+          <div className="w-10 h-10" /> {/* Spacer */}
         </header>
         
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-8 scroll-smooth">

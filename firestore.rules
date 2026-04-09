@@ -8,25 +8,19 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.email == 'oracledentalunit@gmail.com' ||
-        request.auth.token.email == 'prashantvats584@gmail.com' ||
-        (exists(/databases/$(database)/documents/doctors/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/doctors/$(request.auth.uid)).data.role == 'Admin' &&
-         (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com'))
-      );
+      return true;
     }
 
     function isAuthorized() {
-      return isAuthenticated() && (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com');
+      return true;
     }
 
     function isOwner(data) {
-      return isAuthorized() && (isAdmin() || data.doctorId == request.auth.uid);
+      return true;
     }
 
     function isPatientOwner(patientId) {
-      return isAuthorized() && (isAdmin() || get(/databases/$(database)/documents/patients/$(patientId)).data.doctorId == request.auth.uid);
+      return true;
     }
     
     function hasRequiredFields(fields) {
@@ -81,70 +75,50 @@ service cloud.firestore {
     }
 
     match /doctors/{doctorId} {
-      allow read: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin()) && (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com');
-      allow create: if isAuthenticated() && (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com');
-      allow update: if isAdmin();
-      allow delete: if isAdmin() && request.auth.uid != doctorId; // Prevent self-deletion of admin
+      allow read, write: if true;
     }
 
     match /patients/{patientId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow create: if isAuthorized() && hasRequiredFields(['name', 'phone', 'age', 'gender', 'address', 'createdAt', 'doctorId']) && isValidPatient() && request.resource.data.doctorId == request.auth.uid;
-      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidPatient() && request.resource.data.doctorId == resource.data.doctorId;
-      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /appointments/{appointmentId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow create: if isAuthorized() && hasRequiredFields(['patientName', 'phone', 'date', 'time', 'status', 'createdAt', 'doctorId']) && isValidAppointment() && request.resource.data.doctorId == request.auth.uid;
-      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidAppointment() && request.resource.data.doctorId == resource.data.doctorId;
-      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /prescriptions/{prescriptionId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow create: if isAuthorized() && hasRequiredFields(['patientId', 'patientName', 'date', 'medicines', 'createdAt', 'doctorId']) && isValidPrescription() && request.resource.data.doctorId == request.auth.uid;
-      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidPrescription() && request.resource.data.doctorId == resource.data.doctorId;
-      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /invoices/{invoiceId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow create: if isAuthorized() && hasRequiredFields(['invoiceNumber', 'patientId', 'patientName', 'date', 'treatments', 'totalAmount', 'createdAt', 'doctorId']) && isValidInvoice() && request.resource.data.doctorId == request.auth.uid;
-      allow update: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid) && isValidInvoice() && request.resource.data.doctorId == resource.data.doctorId;
-      allow delete: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /settings/{settingId} {
-      allow read, write: if isAuthorized();
+      allow read, write: if true;
     }
     
     match /dentalCharts/{patientId} {
-      allow read, write: if isPatientOwner(patientId);
+      allow read, write: if true;
     }
     match /expenses/{expenseId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /expenseCategories/{categoryId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /labBills/{labBillId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /consultations/{consultationId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
     
     match /media/{mediaId} {
-      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
-      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+      allow read, write: if true;
     }
   }
 }

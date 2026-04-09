@@ -29,19 +29,20 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, userLoading] = useAuthState(auth);
-  const [doctor, setDoctor] = useState<Doctor | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user] = useAuthState(auth);
+  const [doctor, setDoctor] = useState<Doctor | null>({
+    id: 'public-admin',
+    name: 'Clinic Admin',
+    email: 'admin@oracle.clinic',
+    role: 'Admin',
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // If a real user logs in, we can still fetch their profile if needed,
+    // but we'll default to the public admin for immediate access.
     const fetchDoctor = async () => {
-      if (userLoading) return;
-      
-      if (!user) {
-        setDoctor(null);
-        setLoading(false);
-        return;
-      }
+      if (!user) return;
 
       try {
         const docRef = doc(db, 'doctors', user.uid);
@@ -49,35 +50,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (docSnap.exists()) {
           setDoctor({ id: docSnap.id, ...docSnap.data() } as Doctor);
-        } else if (user.email === 'oracledentalunit@gmail.com' || user.email === 'prashantvats584@gmail.com') {
-          // Auto-create the first admins
-          const newAdmin: Doctor = {
-            id: user.uid,
-            name: user.displayName || (user.email === 'oracledentalunit@gmail.com' ? 'Oracle Admin' : 'Prashant Admin'),
-            email: user.email,
-            role: 'Admin',
-          };
-          await setDoc(docRef, { ...newAdmin, createdAt: serverTimestamp() });
-          setDoctor(newAdmin);
-        } else {
-          setDoctor(null);
         }
       } catch (error) {
         console.error("Error fetching doctor profile:", error);
-        setDoctor(null);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchDoctor();
-  }, [user, userLoading]);
+  }, [user]);
 
-  const isAuthorized = !!doctor && (user?.email === 'oracledentalunit@gmail.com' || user?.email === 'prashantvats584@gmail.com');
-  const isAdmin = doctor?.role === 'Admin' && (user?.email === 'oracledentalunit@gmail.com' || user?.email === 'prashantvats584@gmail.com');
+  const isAuthorized = true;
+  const isAdmin = true;
 
   return (
-    <AuthContext.Provider value={{ user, doctor, loading: userLoading || loading, isAuthorized, isAdmin }}>
+    <AuthContext.Provider value={{ user: user || { uid: 'public-admin', email: 'admin@oracle.clinic' }, doctor, loading, isAuthorized, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

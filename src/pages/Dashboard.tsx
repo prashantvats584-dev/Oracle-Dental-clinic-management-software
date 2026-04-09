@@ -70,8 +70,8 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">{getGreeting()}, Dr. {doctorName}</h1>
-        <p className="mt-1 text-sm text-gray-500">Here is what's happening at your clinic today.</p>
+        <h1 className="text-4xl font-display text-gray-900">{getGreeting()}, Dr. {doctorName}</h1>
+        <p className="mt-2 text-base text-gray-500 font-light">Here is what's happening at your clinic today.</p>
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -107,8 +107,8 @@ export default function Dashboard() {
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-bold text-gray-500 uppercase tracking-wider truncate">{item.name}</dt>
-                      <dd className="text-2xl font-extrabold text-gray-900 mt-1">{item.value}</dd>
+                      <dt className="text-xs font-semibold text-gray-400 uppercase tracking-widest truncate">{item.name}</dt>
+                      <dd className="text-2xl font-medium text-gray-900 mt-0.5">{item.value}</dd>
                     </dl>
                   </div>
                 </div>
