@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../lib/firebase';
-import { Plus, Edit2, Trash2, X, Wallet } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Wallet, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -12,17 +12,36 @@ export default function Expenses() {
     user ? query(collection(db, 'expenses'), where('doctorId', '==', user.uid), orderBy('date', 'desc')) : null
   );
   
+  // Custom categories
+  const [categoriesSnapshot] = useCollection(
+    user ? query(collection(db, 'expenseCategories'), where('doctorId', '==', user.uid), orderBy('name', 'asc')) : null
+  );
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     date: format(new Date(), 'yyyy-MM-dd'),
-    category: 'Material',
+    category: '',
     description: '',
     amount: 0,
     paymentMethod: 'Cash'
   });
 
-  const categories = ['Material', 'Salary', 'Rent', 'Electricity', 'Lab', 'Marketing', 'Misc'];
+  const defaultCategories = ['Material', 'Salary', 'Rent', 'Electricity', 'Lab', 'Marketing', 'Misc'];
+  const customCategories = categoriesSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() })) || [];
+  const allCategories = customCategories.length > 0 
+    ? customCategories.map((c: any) => c.name) 
+    : defaultCategories;
+
+  // Set default category if not set
+  React.useEffect(() => {
+    if (!formData.category && allCategories.length > 0) {
+      setFormData(prev => ({ ...prev, category: allCategories[0] }));
+    }
+  }, [allCategories, formData.category]);
+
   const paymentMethods = ['Cash', 'UPI', 'Card', 'Bank'];
 
   const handleOpenModal = (expense?: any) => {
@@ -39,13 +58,38 @@ export default function Expenses() {
       setEditingId(null);
       setFormData({
         date: format(new Date(), 'yyyy-MM-dd'),
-        category: 'Material',
+        category: allCategories[0] || '',
         description: '',
         amount: 0,
         paymentMethod: 'Cash'
       });
     }
     setIsModalOpen(true);
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCategoryName.trim() || !user) return;
+    try {
+      await addDoc(collection(db, 'expenseCategories'), {
+        name: newCategoryName.trim(),
+        doctorId: user.uid,
+        createdAt: serverTimestamp()
+      });
+      setNewCategoryName('');
+    } catch (error) {
+      console.error("Error adding category:", error);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this category?")) {
+      try {
+        await deleteDoc(doc(db, 'expenseCategories', id));
+      } catch (error) {
+        console.error("Error deleting category:", error);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,12 +124,20 @@ export default function Expenses() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-900">Expenses</h2>
-        <button
-          onClick={() => handleOpenModal()}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" /> Add Expense
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsCategoryModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          >
+            <Settings className="w-4 h-4 mr-2" /> Categories
+          </button>
+          <button
+            onClick={() => handleOpenModal()}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4 mr-2" /> Add Expense
+          </button>
+        </div>
       </div>
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
@@ -176,7 +228,7 @@ export default function Expenses() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Category</label>
                       <select value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                        {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                        {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div>
@@ -199,6 +251,65 @@ export default function Expenses() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category Management Modal */}
+      {isCategoryModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 transition-opacity" aria-hidden="true">
+              <div className="absolute inset-0 bg-gray-500 opacity-75" onClick={() => setIsCategoryModalOpen(false)}></div>
+            </div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="relative z-10 inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full">
+              <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">Manage Categories</h3>
+                  <button onClick={() => setIsCategoryModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <form onSubmit={handleAddCategory} className="flex gap-2 mb-6">
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="New category name"
+                    value={newCategoryName}
+                    onChange={e => setNewCategoryName(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  />
+                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium">
+                    Add
+                  </button>
+                </form>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {customCategories.length === 0 ? (
+                    <div className="text-sm text-gray-500 bg-gray-50 p-4 rounded-md">
+                      <p className="font-medium mb-1">No custom categories yet.</p>
+                      <p>Add your first category above. Default categories will be hidden once you add your own.</p>
+                    </div>
+                  ) : (
+                    customCategories.map((c: any) => (
+                      <div key={c.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded-md border border-gray-100">
+                        <span className="text-sm text-gray-700">{c.name}</span>
+                        <button onClick={() => handleDeleteCategory(c.id)} className="text-red-500 hover:text-red-700 p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+              <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:w-auto sm:text-sm">
+                  Close
+                </button>
               </div>
             </div>
           </div>

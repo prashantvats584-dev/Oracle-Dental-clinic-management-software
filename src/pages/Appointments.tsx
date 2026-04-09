@@ -131,10 +131,13 @@ export default function Appointments() {
     }
   };
 
-  const filteredAppointments = appointmentsSnapshot?.docs.filter(doc => {
-    if (!filterDate) return true;
-    return doc.data().date === filterDate;
-  });
+  const filteredAppointments = React.useMemo(() => {
+    if (!appointmentsSnapshot) return [];
+    return appointmentsSnapshot.docs.filter(doc => {
+      if (!filterDate) return true;
+      return doc.data().date === filterDate;
+    });
+  }, [appointmentsSnapshot, filterDate]);
 
   return (
     <div className="space-y-6">

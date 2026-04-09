@@ -1,3 +1,4 @@
+import React from 'react';
 import { Users, Calendar, DollarSign, Clock, Wallet, TrendingUp, Plus } from 'lucide-react';
 import { useCollection } from 'react-firebase-hooks/firestore';
 import { collection, query, where } from 'firebase/firestore';
@@ -5,6 +6,7 @@ import { db } from '../lib/firebase';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { motion } from 'motion/react';
 
 export default function Dashboard() {
   const { user, doctor } = useAuth();
@@ -35,19 +37,26 @@ export default function Dashboard() {
   const totalPatients = patientsSnapshot?.docs.length || 0;
   const todayAppointments = todayAppointmentsSnapshot?.docs.length || 0;
   
-  let totalRevenue = 0;
-  let pendingPayments = 0;
+  const { totalRevenue, pendingPayments, totalExpenses, totalLabCost, netProfit } = React.useMemo(() => {
+    let rev = 0;
+    let pend = 0;
+    patientsSnapshot?.docs.forEach(doc => {
+      const data = doc.data();
+      rev += data.paidAmount || 0;
+      pend += data.pendingAmount || 0;
+    });
 
-  patientsSnapshot?.docs.forEach(doc => {
-    const data = doc.data();
-    totalRevenue += data.paidAmount || 0;
-    pendingPayments += data.pendingAmount || 0;
-  });
-
-  const totalExpenses = expensesSnapshot?.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0) || 0;
-  const totalLabCost = labBillsSnapshot?.docs.reduce((sum, doc) => sum + (doc.data().labCost || 0), 0) || 0;
-  
-  const netProfit = totalRevenue - (totalExpenses + totalLabCost);
+    const exp = expensesSnapshot?.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0) || 0;
+    const lab = labBillsSnapshot?.docs.reduce((sum, doc) => sum + (doc.data().labCost || 0), 0) || 0;
+    
+    return {
+      totalRevenue: rev,
+      pendingPayments: pend,
+      totalExpenses: exp,
+      totalLabCost: lab,
+      netProfit: rev - (exp + lab)
+    };
+  }, [patientsSnapshot, expensesSnapshot, labBillsSnapshot]);
 
   const stats = [
     { name: 'Total Patients', value: totalPatients, icon: Users, color: 'bg-blue-500' },
@@ -84,23 +93,27 @@ export default function Dashboard() {
         {stats.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.name} className="bg-white overflow-hidden shadow rounded-lg">
+            <motion.div
+              key={item.name}
+              whileHover={{ y: -4 }}
+              className="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-100 transition-all hover:shadow-md"
+            >
               <div className="p-5">
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <div className={`p-3 rounded-md ${item.color}`}>
-                      <Icon className="h-6 w-6 text-white" />
+                    <div className={`p-3 rounded-lg ${item.color} bg-opacity-10`}>
+                      <Icon className={`h-6 w-6 ${item.color.replace('bg-', 'text-')}`} />
                     </div>
                   </div>
                   <div className="ml-5 w-0 flex-1">
                     <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">{item.name}</dt>
-                      <dd className="text-2xl font-semibold text-gray-900">{item.value}</dd>
+                      <dt className="text-sm font-bold text-gray-500 uppercase tracking-wider truncate">{item.name}</dt>
+                      <dd className="text-2xl font-extrabold text-gray-900 mt-1">{item.value}</dd>
                     </dl>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

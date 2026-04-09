@@ -6,9 +6,25 @@ import {defineConfig, loadEnv} from 'vite';
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
   return {
+    base: './',
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+    },
+    build: {
+      target: 'esnext',
+      minify: 'esbuild',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
+            'vendor-utils': ['date-fns', 'lucide-react', 'motion'],
+            'vendor-pdf': ['jspdf', 'jspdf-autotable'],
+          },
+        },
+      },
+      chunkSizeWarningLimit: 1000,
     },
     resolve: {
       alias: {

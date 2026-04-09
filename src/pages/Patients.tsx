@@ -6,6 +6,7 @@ import { Plus, Edit2, Trash2, X, Activity, Search, User } from 'lucide-react';
 import DentalChart from '../components/DentalChart';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function Patients() {
   const { user } = useAuth();
@@ -105,12 +106,15 @@ export default function Patients() {
     }
   };
 
-  const filteredPatients = patientsSnapshot?.docs.filter(doc => {
-    const patient = doc.data();
+  const filteredPatients = React.useMemo(() => {
+    if (!patientsSnapshot) return [];
     const searchLower = searchQuery.toLowerCase();
-    return patient.name?.toLowerCase().includes(searchLower) || 
-           patient.phone?.includes(searchQuery);
-  });
+    return patientsSnapshot.docs.filter(doc => {
+      const patient = doc.data();
+      return patient.name?.toLowerCase().includes(searchLower) || 
+             patient.phone?.includes(searchQuery);
+    });
+  }, [patientsSnapshot, searchQuery]);
 
   return (
     <div className="space-y-6">
@@ -150,42 +154,65 @@ export default function Patients() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr><td colSpan={4} className="px-6 py-4 text-center">Loading...</td></tr>
-              ) : filteredPatients?.length === 0 ? (
-                <tr><td colSpan={4} className="px-6 py-4 text-center text-gray-500">No patients found.</td></tr>
-              ) : filteredPatients?.map((doc) => {
-                const patient = doc.data();
-                return (
-                  <tr key={doc.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link to={`/patients/${doc.id}`} className="text-sm font-medium text-blue-600 hover:underline">{patient.name}</Link>
-                      <div className="text-sm text-gray-500">{patient.age} yrs, {patient.gender}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {patient.phone}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">Total: ₹{patient.totalAmount}</div>
-                      <div className="text-sm text-red-600">Pending: ₹{patient.pendingAmount}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link to={`/patients/${doc.id}`} className="text-indigo-600 hover:text-indigo-900 mr-4 inline-block" title="Profile">
-                        <User className="w-4 h-4" />
-                      </Link>
-                      <button onClick={() => handleOpenChart(doc.id, patient.name)} className="text-purple-600 hover:text-purple-900 mr-4" title="Dental Chart">
-                        <Activity className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleOpenModal({ id: doc.id, ...patient })} className="text-blue-600 hover:text-blue-900 mr-4" title="Edit">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(doc.id)} className="text-red-600 hover:text-red-900" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+              <AnimatePresence mode="popLayout">
+                {loading ? (
+                  <motion.tr
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <td colSpan={4} className="px-6 py-4 text-center">Loading...</td>
+                  </motion.tr>
+                ) : filteredPatients?.length === 0 ? (
+                  <motion.tr
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500">No patients found.</td>
+                  </motion.tr>
+                ) : filteredPatients?.map((doc) => {
+                  const patient = doc.data();
+                  return (
+                    <motion.tr
+                      key={doc.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      layout
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Link to={`/patients/${doc.id}`} className="text-sm font-bold text-blue-600 hover:underline">{patient.name}</Link>
+                        <div className="text-xs text-gray-500 font-medium">{patient.age} yrs, {patient.gender}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                        {patient.phone}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 font-bold">Total: ₹{patient.totalAmount}</div>
+                        <div className="text-xs text-red-600 font-bold">Pending: ₹{patient.pendingAmount}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex justify-end space-x-2">
+                          <Link to={`/patients/${doc.id}`} className="p-2 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-lg transition-colors" title="Profile">
+                            <User className="w-4 h-4" />
+                          </Link>
+                          <button onClick={() => handleOpenChart(doc.id, patient.name)} className="p-2 text-purple-600 hover:text-purple-900 hover:bg-purple-50 rounded-lg transition-colors" title="Dental Chart">
+                            <Activity className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleOpenModal({ id: doc.id, ...patient })} className="p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button onClick={() => handleDelete(doc.id)} className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors" title="Delete">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>

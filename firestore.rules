@@ -9,17 +9,16 @@ service cloud.firestore {
     
     function isAdmin() {
       return isAuthenticated() && (
+        request.auth.token.email == 'oracledentalunit@gmail.com' ||
         request.auth.token.email == 'prashantvats584@gmail.com' ||
         (exists(/databases/$(database)/documents/doctors/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/doctors/$(request.auth.uid)).data.role == 'Admin')
+         get(/databases/$(database)/documents/doctors/$(request.auth.uid)).data.role == 'Admin' &&
+         (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com'))
       );
     }
 
     function isAuthorized() {
-      return isAuthenticated() && (
-        request.auth.token.email == 'prashantvats584@gmail.com' ||
-        exists(/databases/$(database)/documents/doctors/$(request.auth.uid))
-      );
+      return isAuthenticated() && (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com');
     }
 
     function isOwner(data) {
@@ -82,11 +81,8 @@ service cloud.firestore {
     }
 
     match /doctors/{doctorId} {
-      allow read: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin());
-      allow create: if isAuthenticated() && (
-        (request.auth.uid == doctorId && request.auth.token.email == 'prashantvats584@gmail.com') ||
-        isAdmin()
-      );
+      allow read: if isAuthenticated() && (request.auth.uid == doctorId || isAdmin()) && (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com');
+      allow create: if isAuthenticated() && (request.auth.token.email == 'oracledentalunit@gmail.com' || request.auth.token.email == 'prashantvats584@gmail.com');
       allow update: if isAdmin();
       allow delete: if isAdmin() && request.auth.uid != doctorId; // Prevent self-deletion of admin
     }
@@ -127,6 +123,11 @@ service cloud.firestore {
       allow read, write: if isPatientOwner(patientId);
     }
     match /expenses/{expenseId} {
+      allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
+      allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
+    }
+    
+    match /expenseCategories/{categoryId} {
       allow read: if isAuthorized() && (isAdmin() || resource.data.doctorId == request.auth.uid);
       allow write: if isAuthorized() && (isAdmin() || request.resource.data.doctorId == request.auth.uid);
     }

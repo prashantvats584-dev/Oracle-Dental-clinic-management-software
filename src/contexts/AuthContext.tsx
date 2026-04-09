@@ -49,11 +49,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (docSnap.exists()) {
           setDoctor({ id: docSnap.id, ...docSnap.data() } as Doctor);
-        } else if (user.email === 'prashantvats584@gmail.com') {
-          // Auto-create the first admin
+        } else if (user.email === 'oracledentalunit@gmail.com' || user.email === 'prashantvats584@gmail.com') {
+          // Auto-create the first admins
           const newAdmin: Doctor = {
             id: user.uid,
-            name: user.displayName || 'Admin Doctor',
+            name: user.displayName || (user.email === 'oracledentalunit@gmail.com' ? 'Oracle Admin' : 'Prashant Admin'),
             email: user.email,
             role: 'Admin',
           };
@@ -73,8 +73,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchDoctor();
   }, [user, userLoading]);
 
-  const isAuthorized = !!doctor;
-  const isAdmin = doctor?.role === 'Admin';
+  const isAuthorized = !!doctor && (user?.email === 'oracledentalunit@gmail.com' || user?.email === 'prashantvats584@gmail.com');
+  const isAdmin = doctor?.role === 'Admin' && (user?.email === 'oracledentalunit@gmail.com' || user?.email === 'prashantvats584@gmail.com');
 
   return (
     <AuthContext.Provider value={{ user, doctor, loading: userLoading || loading, isAuthorized, isAdmin }}>

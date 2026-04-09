@@ -1,20 +1,55 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Oracle Dental Clinic Management System
 
-# Run and deploy your AI Studio app
+A professional dental clinic management system built with React, Vite, and Firebase.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/c48db9bc-49c2-49d6-8086-04390cee56e3
+- **Multi-Doctor Support**: Independent data scoping for each doctor.
+- **Patient Management**: Auto-dentition selection based on age.
+- **Appointment Scheduling**: Real-time updates and WhatsApp confirmations.
+- **Prescription & Invoice Generation**: AI-powered suggestions and PDF export.
+- **Financial Tracking**: Expense management and lab billing.
+- **Admin Dashboard**: Role-based access control and doctor management.
 
-## Run Locally
+## Performance Optimized
 
-**Prerequisites:**  Node.js
+- **Code Splitting**: Lazy loading of pages for fast initial load.
+- **Optimized Build**: Manual chunk splitting for better caching.
+- **Mobile First**: Responsive design with optimized touch targets.
 
+## Deployment to GitHub Pages
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+This project is configured for easy deployment to GitHub Pages.
+
+### 1. Setup
+
+Ensure you have your Firebase configuration in `src/lib/firebase.ts` or a `.env` file.
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Deploy
+
+Run the following command to build and deploy to the `gh-pages` branch:
+
+```bash
+npm run deploy
+```
+
+The app will be available at `https://<your-username>.github.io/<repo-name>/`.
+
+## Local Development
+
+```bash
+npm run dev
+```
+
+## Tech Stack
+
+- **Frontend**: React 19, Vite, Tailwind CSS, Motion
+- **Backend**: Firebase (Auth, Firestore)
+- **Icons**: Lucide React
+- **PDF**: jsPDF
