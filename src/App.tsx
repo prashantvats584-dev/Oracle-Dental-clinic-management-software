@@ -4,7 +4,7 @@
  */
 
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { auth, loginWithGoogle, logout } from './lib/firebase';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
@@ -50,7 +50,7 @@ function AppContent({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <AuthProvider>
-      <Router basename="/Oracle-Dental-clinic-management-software">
+      <Router>
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<AppContent><PageWrapper><Dashboard /></PageWrapper></AppContent>} />
